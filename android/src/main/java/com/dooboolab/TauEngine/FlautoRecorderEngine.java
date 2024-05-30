@@ -23,6 +23,7 @@ import android.media.AudioRecord;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -46,11 +47,14 @@ public class FlautoRecorderEngine
 		private boolean isRecording = false;
 		private double maxAmplitude = 0;
 		String filePath;
+		String filePath2;
 		int totalBytes = 0;
+		long startTime = 0;
 		t_CODEC codec;
 		Runnable p;
 		FlautoRecorder session = null;
 		FileOutputStream outputStream = null;
+		FileOutputStream outputStream2 = null;
 		final private Handler mainHandler = new Handler (Looper.getMainLooper ());
 
 
@@ -65,11 +69,15 @@ public class FlautoRecorderEngine
 			// Write the output audio in byte
 			System.out.println("---> writeAudioDataToFile");
 			totalBytes = 0;
+			startTime = System.currentTimeMillis();
 			outputStream = null;
+			outputStream2 = null;
 			filePath = aFilePath;
+			filePath2 = aFilePath.replace(".wav", "_2.wav");
 			if (filePath != null)
 			{
-				outputStream = new FileOutputStream(filePath);
+				outputStream = new FileOutputStream(filePath, false);
+				outputStream2 = new FileOutputStream(filePath2, false);
 
 				if (codec == t_CODEC.pcm16WAV) {
 					FlautoWaveHeader header = new FlautoWaveHeader
@@ -82,6 +90,7 @@ public class FlautoRecorderEngine
 
 						);
 					header.write(outputStream);
+					header.write(outputStream2);
 				}
 			}
 			System.out.println("<--- writeAudioDataToFile");
@@ -94,6 +103,32 @@ public class FlautoRecorderEngine
 			outputStream.close();
 			if (codec == t_CODEC.pcm16WAV) {
 				RandomAccessFile fh = new RandomAccessFile(filePath, "rw");
+				fh.seek(4);
+				int x = totalBytes + 36;
+				fh.write(x >> 0);
+				fh.write(x >> 8);
+				fh.write(x >> 16);
+				fh.write(x >> 24);
+
+
+				fh.seek(FlautoWaveHeader.HEADER_LENGTH - 4);
+				fh.write(totalBytes >> 0);
+				fh.write(totalBytes >> 8);
+				fh.write(totalBytes >> 16);
+				fh.write(totalBytes >> 24);
+				fh.close();
+			}
+		}
+
+	}
+
+	void closeAudioDataFile2(String filepath2) throws Exception
+	{
+
+		if (outputStream2 != null) {
+			outputStream2.close();
+			if (codec == t_CODEC.pcm16WAV) {
+				RandomAccessFile fh = new RandomAccessFile(filePath2, "rw");
 				fh.seek(4);
 				int x = totalBytes + 36;
 				fh.write(x >> 0);
@@ -158,7 +193,7 @@ public class FlautoRecorderEngine
 					if (outputStream != null) {
 						outputStream.write(byteBuffer.array(), 0, ln);
 						//todo MYFIX: bad for performance
-						outputStream.flush();
+						//outputStream.flush();
 					} else {
 						mainHandler.post(new Runnable() {
 							@Override
@@ -167,6 +202,16 @@ public class FlautoRecorderEngine
 								session.recordingData(Arrays.copyOfRange(byteBuffer.array(), 0, ln));
 							}
 						});
+					}
+					if (outputStream2 != null) {
+						outputStream2.write(byteBuffer.array(), 0, ln);
+						//todo MYFIX: bad for performance
+						//outputStream2.flush();
+						if(System.currentTimeMillis() - startTime > 4500) {
+							Log.e("TAG", "close outputStream2");
+							closeAudioDataFile2(filePath2);
+							outputStream2 = null;
+						}
 					}
 					for (int i = 0; i < n / 2; ++i) {
 						short curSample = getShort(byteBuffer.array()[i * 2], byteBuffer.array()[i * 2 + 1]);
@@ -276,6 +321,7 @@ public class FlautoRecorderEngine
 			recorder = null;
 		}
 		closeAudioDataFile(filePath);
+		closeAudioDataFile2(filePath2);
 	}
 
 	public boolean pauseRecorder( )
