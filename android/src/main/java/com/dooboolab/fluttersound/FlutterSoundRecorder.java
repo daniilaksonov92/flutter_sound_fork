@@ -1,6 +1,6 @@
 package com.dooboolab.fluttersound;
 /*
- * Copyright 2018, 2019, 2020, 2021 Dooboolab.
+ * Copyright 2018, 2019, 2020, 2021 canardoux.
  *
  * This file is part of Flutter-Sound.
  *
@@ -111,7 +111,6 @@ public class FlutterSoundRecorder extends FlutterSoundSession implements FlautoR
 
 	void openRecorder ( final MethodCall call, final Result result )
 	{
-
 		boolean r = m_recorder.openRecorder();
 		if (r)
 		{
@@ -130,7 +129,9 @@ public class FlutterSoundRecorder extends FlutterSoundSession implements FlautoR
 	void reset(final MethodCall call, final MethodChannel.Result result)
 	{
 		m_recorder.closeRecorder();
-		result.success ( 0 );
+		// don't set the result here, because this function is called recursively for several player/recorder
+		// and this result is set by the caller (in FlutterSoundManager.java)
+		//result.success ( 0 );
 
 	}
 
@@ -194,6 +195,7 @@ public class FlutterSoundRecorder extends FlutterSoundSession implements FlautoR
 			Integer                         sampleRate          = call.argument ( "sampleRate" );
 			Integer                         numChannels         = call.argument ( "numChannels" );
 			Integer                         bitRate             = call.argument ( "bitRate" );
+			Integer 						bufferSize 			= call.argument ( "bufferSize");
 			int                             _codec              = call.argument ( "codec" );
 			t_CODEC               			codec               = t_CODEC.values()[ _codec ];
 			final String                     path               = call.argument ( "path" );
@@ -201,8 +203,7 @@ public class FlutterSoundRecorder extends FlutterSoundSession implements FlautoR
 			t_AUDIO_SOURCE                  audioSource         = t_AUDIO_SOURCE.values()[_audioSource];
 			int 							toStream	    	= call.argument ( "toStream");
 
-			//todo MYFIX bufferSize = false
-			boolean r = m_recorder.startRecorder(codec, sampleRate, numChannels, bitRate, 0, path, audioSource, toStream != 0);
+			boolean r = m_recorder.startRecorder(codec, sampleRate, numChannels, bitRate, bufferSize, path, audioSource, toStream != 0);
 			if (r)
 				result.success ( "Media Recorder is started" );
 			else

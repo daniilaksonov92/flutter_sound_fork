@@ -1,6 +1,6 @@
 package com.dooboolab.fluttersound;
 /*
- * Copyright 2018, 2019, 2020, 2021 Dooboolab.
+ * Copyright 2018, 2019, 2020, 2021 DooboCanardouxolab.
  *
  * This file is part of Flutter-Sound.
  *
@@ -155,5 +155,3 @@ class FlutterSoundRecorderManager extends FlutterSoundManager
         }
 
 }
-
-

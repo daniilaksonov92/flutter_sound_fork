@@ -33,7 +33,7 @@
 {
 }
 
-// ----------------------------------------------  callback ---------------------------------------------------------------------------
+// ----------------------------------------------  callbacks ---------------------------------------------------------------------------
 
 - (void)openPlayerCompleted: (bool)success
 {
@@ -76,7 +76,7 @@
 
 - (void)needSomeFood: (int) ln
 {
-        [self invokeMethod:@"needSomeFood" numberArg: [NSNumber numberWithInt: ln]  success: @YES ];
+        [self invokeMethod:@"needSomeFood" numberArg: [NSNumber numberWithInt: ln]  success: true ];
 }
 
 - (void)updateProgressPosition: (long)position duration: (long)duration
@@ -96,36 +96,35 @@
 
 - (void)pause
 {
-        [self invokeMethod:@"pause" numberArg: [self getPlayerStatus] success: @YES ];
+        [self invokeMethod:@"pause" numberArg: [self getPlayerStatus] success:true ];
 }
 
 - (void)resume
 {
-        [self invokeMethod:@"resume" numberArg: [self getPlayerStatus]  success: @YES ];
+        [self invokeMethod:@"resume" numberArg: [self getPlayerStatus]  success: true ];
 }
 
 - (void)skipForward
 {
-        [self invokeMethod:@"skipForward" numberArg: [self getPlayerStatus]  success: @YES ];
+        [self invokeMethod:@"skipForward" numberArg: [self getPlayerStatus]  success: true ];
 
 }
 
 - (void)skipBackward
 {
-        [self invokeMethod:@"skipBackward" numberArg: [self getPlayerStatus]  success: @YES ];
+        [self invokeMethod:@"skipBackward" numberArg: [self getPlayerStatus]  success: true ];
 
 }
 
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-// BE CAREFUL : TrackPlayer must instance FlautoTrackPlayer !!!!!
+
 - (FlutterSoundPlayer*)init: (FlutterMethodCall*)call  playerManager: (FlutterSoundPlayerManager*)pm
 {
         flautoPlayer = [ [FlautoPlayer alloc] init: self];
         flutterSoundPlayerManager = pm;
-        bool voiceProcessing = (bool)call.arguments[@"voiceProcessing"];
-        [flautoPlayer setVoiceProcessing: voiceProcessing];
+        //bool voiceProcessing = (bool)call.arguments[@"voiceProcessing"];
         return [super init: call]; // Init Session
 }
 
@@ -210,6 +209,7 @@
         NSString* path = (NSString*)call.arguments[@"fromURI"];
         NSNumber* numChannels = (NSNumber*)call.arguments[@"numChannels"];
         NSNumber* sampleRate = (NSNumber*)call.arguments[@"sampleRate"];
+        NSNumber* bufferSize = (NSNumber*)call.arguments[@"bufferSize"];
         t_CODEC codec = (t_CODEC)([(NSNumber*)call.arguments[@"codec"] intValue]);
         FlutterStandardTypedData* dataBuffer = (FlutterStandardTypedData*)call.arguments[@"fromDataBuffer"];
         NSData* data = nil;
@@ -217,6 +217,7 @@
                 data = [dataBuffer data];
         int channels = ([numChannels class] != [NSNull class]) ? [numChannels intValue] : 1;
         long samplerateLong = ([sampleRate class] != [NSNull class]) ? [sampleRate longValue] : 44000;
+        long bufferSizeLong = ([bufferSize class] != [NSNull class]) ? [bufferSize longValue] : 8192;
   
         bool b =
         [
@@ -225,6 +226,7 @@
                 fromDataBuffer: data
                 channels: channels
                 sampleRate: samplerateLong
+                bufferSize: bufferSizeLong
         ];
         if (b)
         {
@@ -247,12 +249,20 @@
         [self log: DBG msg: @"IOS:--> startPlayerFromMic"];
         NSNumber* numChannels = (NSNumber*)call.arguments[@"numChannels"];
         NSNumber* sampleRate = (NSNumber*)call.arguments[@"sampleRate"];
+        NSNumber* bufferSize = (NSNumber*)call.arguments[@"bufferSize"];
+        NSNumber*  enableVoiceProcessing = (NSNumber*)call.arguments[@"enableVoiceProcessing"];
+
+        //[flautoPlayer setVoiceProcessing: voiceProcessing];
+
         long samplerateLong = ([sampleRate class] != [NSNull class]) ? [sampleRate longValue] : 44000;
         int channels = ([numChannels class] != [NSNull class]) ? [numChannels intValue] : 1;
-        bool b =
+        long bufferSizeLong = ([bufferSize class] != [NSNull class]) ? [bufferSize longValue] : 8192;
+         bool b =
         [
                 flautoPlayer startPlayerFromMicSampleRate: samplerateLong
                 nbChannels: channels
+                bufferSize: bufferSizeLong
+                enableVoiceProcessing: (enableVoiceProcessing.boolValue) != 0
         ];
         if (b)
         {
@@ -409,4 +419,3 @@
 
 @end
 //---------------------------------------------------------------------------------------------
-

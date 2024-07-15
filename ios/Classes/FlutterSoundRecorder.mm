@@ -5,7 +5,7 @@
 //  Created by larpoux on 02/05/2020.
 //
 /*
- * Copyright 2018, 2019, 2020, 2021 Dooboolab.
+ * Copyright 2018, 2019, 2020, 2021 Canardoux.
  *
  * This file is part of Flutter-Sound.
  *
@@ -143,12 +143,22 @@
         NSNumber* sampleRateArgs = (NSNumber*)call.arguments[@"sampleRate"];
         NSNumber* numChannelsArgs = (NSNumber*)call.arguments[@"numChannels"];
         NSNumber* bitRateArgs = (NSNumber*)call.arguments[@"bitRate"];
+        NSNumber* bufferSizeArgs = (NSNumber*)call.arguments[@"bufferSize"];
         NSNumber* codec = (NSNumber*)call.arguments[@"codec"];
+        NSNumber*  enableVoiceProcessing = (NSNumber*)call.arguments[@"enableVoiceProcessing"];
+        NSNumber*  audioSource = (NSNumber*)call.arguments[@"audioSource"]; // actually not used
+        NSNumber* toStream = (NSNumber*)call.arguments[@"toStream"]; // actually not used
 
         t_CODEC coder = aacADTS;
         if (![codec isKindOfClass:[NSNull class]])
         {
                 coder = (t_CODEC)([codec intValue]);
+        }
+        
+        int bufferSize = 20480;
+        if (![bufferSizeArgs isKindOfClass:[NSNull class]])
+        {
+                 bufferSize = (int)[bufferSizeArgs integerValue];
         }
 
         long sampleRate = 44100;
@@ -168,6 +178,8 @@
         {
                 numChannels = (int)[numChannelsArgs integerValue];
         }
+        
+        //bool _voiceProcessing = enableVoiceProcessing != 0;
 
         bool b =
         [
@@ -176,6 +188,8 @@
                 channels: numChannels
                 sampleRate: sampleRate
                 bitRate: bitRate
+                bufferSize: bufferSize
+                enableVoiceProcessing: (enableVoiceProcessing.boolValue) != 0
         ];
         if (b)
         {
