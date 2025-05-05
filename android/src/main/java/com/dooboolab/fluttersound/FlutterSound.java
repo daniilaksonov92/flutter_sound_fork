@@ -1,4 +1,5 @@
 package com.dooboolab.fluttersound;
+
 /*
  * Copyright 2018, 2019, 2020, 2021 Dooboolab.
  *
@@ -20,82 +21,56 @@ package com.dooboolab.fluttersound;
 
 import android.app.Activity;
 import android.content.Context;
+
 import androidx.annotation.NonNull;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 
 import com.dooboolab.TauEngine.Flauto;
 
-public class FlutterSound
-	implements FlutterPlugin,
-	           ActivityAware
-{
-	FlutterPlugin.FlutterPluginBinding pluginBinding;
+public class FlutterSound implements FlutterPlugin, ActivityAware {
+  private FlutterPluginBinding pluginBinding;
 
-	@Override
-	public void onAttachedToEngine ( FlutterPlugin.FlutterPluginBinding binding )
-	{
-		this.pluginBinding = binding;
-	}
+  @Override
+  public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+    this.pluginBinding = binding;
+    // Нельзя вызывать attachFlautoX здесь, т.к. Activity может быть недоступна
+  }
 
+  @Override
+  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    this.pluginBinding = null;
+  }
 
-	/**
-	 * Plugin registration.
-	 */
-	public static void registerWith ( Registrar registrar )
-	{
-		if (registrar.activity() == null) {
-			return;
-		}
-		//reg = registrar;
-		Flauto.androidContext = registrar.context ();
-		Flauto.androidActivity = registrar.activity ();
+  @Override
+  public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+    Activity activity = binding.getActivity();
+    Context context = pluginBinding.getApplicationContext();
 
-		FlutterSoundPlayerManager.attachFlautoPlayer ( Flauto.androidContext, registrar.messenger () );
-		FlutterSoundRecorderManager.attachFlautoRecorder ( Flauto.androidContext, registrar.messenger ()  );
-	}
+    // Сохраняем ссылки в Flauto (по аналогии с registerWith)
+    Flauto.androidActivity = activity;
+    Flauto.androidContext = context;
 
+    // Регистрируем player и recorder
+    FlutterSoundPlayerManager.attachFlautoPlayer(context, pluginBinding.getBinaryMessenger());
+    FlutterSoundRecorderManager.attachFlautoRecorder(context, pluginBinding.getBinaryMessenger());
+  }
 
-	@Override
-	public void onDetachedFromEngine ( FlutterPlugin.FlutterPluginBinding binding )
-	{
-	}
+  @Override
+  public void onDetachedFromActivity() {
+    // Очистка активности
+    Flauto.androidActivity = null;
+  }
 
-	@Override
-	public void onDetachedFromActivity ()
-	{
-	}
+  @Override
+  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+    onAttachedToActivity(binding); // просто повторяем attach
+  }
 
-	@Override
-	public void onReattachedToActivityForConfigChanges (
-		@NonNull
-			ActivityPluginBinding binding
-	                                                   )
-	{
-
-	}
-
-	@Override
-	public void onDetachedFromActivityForConfigChanges ()
-	{
-
-	}
-
-	@Override
-	public void onAttachedToActivity (
-		@NonNull
-			ActivityPluginBinding binding
-	                                 )
-	{
-		Flauto.androidActivity = binding.getActivity ();
-
-		// Only register if activity exists (the application is not running in background)
-		Flauto.androidContext = pluginBinding.getApplicationContext ();
-		FlutterSoundPlayerManager.attachFlautoPlayer ( Flauto.androidContext, pluginBinding.getBinaryMessenger () );
-		FlutterSoundRecorderManager.attachFlautoRecorder ( Flauto.androidContext, pluginBinding.getBinaryMessenger () );
-	}
-
-
+  @Override
+  public void onDetachedFromActivityForConfigChanges() {
+    onDetachedFromActivity(); // повторяем detach
+  }
 }
